@@ -13,9 +13,15 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [ClientList (Command 1500)](#1500)
 - [AlmondProperties (Command 1050)](#1050)
 - [SubscribeMe (Command 1011)](1011)
+- [GetDevicePreferences (Command 1700)](1700a)
+- [GetClientPreferences (Command 1700)](1700b)
+- [UpdateDevicePreferences (Command 1700)](1700c)
+- [UpdateClientPreferences (Command 1700)](1700d)
+- [RouterSummary (Command 1100)](#1100)
+- [AffiliationUserRequest (Command 23)](#23)
 
 <a name="1061"></a>
-## 1) Command 1061
+## 1)Command 1061
     Command no 
     1061- JSON format
  
@@ -26,24 +32,23 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     //(AlmondMAC = <packet.parsedPayload.AlmondMAC>)
     3.hgetall on AL_<packet.parsedPayload.AlmondMAC>
     
-    //(prefix+key = data.prefix + <string>, here <string> = random string data)
-    4.get on data.prefix + <string>
+    //(prefix+key = ICID_ + <string>, here <string> = random string data), value = null
+    4.get on ICID_<string>
 
     /*if (client.connected) {
         client["setex"](key, time, value, callback);
     }*/
-    6.setex on data.prefix + string            // (prefix + key)
+    5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME
 
     Queue
      // (payload,command,almondMAC) to queue
-    9.Send packet.Payload.toString(),1061+1,packet.parsedPayload.AlmondMAC to o.server
+    8.Send response to o.server
 
     Functional 
     1.Command 1061
-    2.Send listResponse,commandLengthType ToMobile
-    5.return redis.client_replica;
-    7.delete store[commandID]
-    8.Return commandID
+    2.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
+    6.delete store[commandID]
+    7.Return commandID
 
     Flow
     socket(packet)->validator(do)->processor(do)->commandMapping(almond.onlyUnicast)->dispatcher(dispatchResponse)->dispatcher(unicast)
@@ -60,7 +65,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     1.Command 1200
     2.Return modifiedRows       // rowBuilder->Devices
 
-    3.Send listResponse,commandLengthType ToMobile
+    3.Send listResponse,commandLengthType ToMobile          //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->commandMapping(device.execute)->dispatcher(dispatchResponse)
@@ -82,7 +87,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.return modifiedRows       //rowBuilder->getResponse
     4.return row                //rowBuilder->scenes
 
-    5.Send listResponse,commandLengthType ToMobile
+    5.Send listResponse,commandLengthType ToMobile          //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->commandMapping(genericModel.execute)->dispatcher(dispatchResponse)
@@ -99,8 +104,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     1.Command 1400
     2.return modifiedRows       //rowBuilder->getRespponse
     3.return row                //rowBuilder->rules
-
-    4.Send listResponse,commandLengthType ToMobile
+ 
+    4.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->commandMapping(genericModel.execute)->dispatcher(dispatchResponse)
@@ -118,7 +123,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     2.return modifiedRows                //rowBuilder->getResponse
     3.return parsedClients               //rowBuilder->clients
 
-    4.Send listResponse,commandLengthType ToMobile
+    4.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->commandMapping(genericModel.execute)->dispatcher(dispatchResponse)
@@ -139,7 +144,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     1.Command 1050
     3.return result              // rowBuilder->almondProperties
 
-    4.Send listResponse,commandLengthType ToMobile
+    4.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
 
     Flow 
     socket(packet)->validator(do)->processor(do)->commandMapping(almond.AlmondProperties)->dispatcher(dispatchResponse)
@@ -170,4 +175,153 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     Flow 
     socket(packet)->validator(do)->processor(do)->commandMapping(SC.subscriptionCommands)->dispatcher(dispatchResponse)
+
+<a name="1700a"></a>
+## 8)GetDevicePreferences (Command 1700) 
+    Command no
+    1700- JSON format 
+
+    Required
+    Command,CommandType,Payload
+
+    SQl
+    2.Select on NotificationPreferences
+      params: NotificationPreferences
+
+    Functional
+    1.Command 1700
+    3.Send listResponse,commandLengthType ToMobile            //where listResponse = payload
+
+    Flow 
+    socket(packet)->validator(do)->processor(do)->commandMapping(newPref.do)->dispatcher(dispatchResponse)->broadcastBuilder(preferences)
+
+<a name="1700b"></a>
+## 9)GetClientPreferences (Command 1700) 
+    Command no
+    1700- JSON format 
+
+    Required
+    Command,CommandType,Payload
+
+    SQl
+    2.Select on ClientPreferences
+      params: WifiClientsNotificationPreferences
+
+    Functional
+    1.Command 1700 
+    3.return GetClientPreferences response              //oldRowBuilder.newPref
+    4.Send listResponse,commandLengthType ToMobile      //where listResponse = payload
+ 
+    Flow 
+    socket(packet)->validator(do)->processor(do)->commandMapping(newPref.do)->dispatcher(dispatchResponse)->broadcastBuilder(preferences)
+
+<a name="1700c"></a>
+## 10)UpdateDevicePreference (Command 1700) 
+    Command no
+    1700- JSON format 
+
+    Required
+    Command,CommandType,Payload
+
+    SQl
+    2.Select on NotificationPreferences
+      params: NotificationPreferences
+
+    Functional
+    1.Command 1700
+    3.Send listResponse,commandLengthType ToMobile               //where listResponse = payload
+    4.return DynamicDevicePreferencesResponse,socket.userid      // broadcastBuilder.preferences
+
+    Flow 
+    socket(packet)->validator(do)->processor(do)->commandMapping(newPref.do)->dispatcher(dispatchResponse)->broadcastBuilder(preferences)
+
+<a name="1700d"></a>
+## 11)UpdateClientPreferences (Command 1700) 
+    Command no
+    1700- JSON format 
+
+    Required
+    Command,CommandType,Payload
+
+    SQl
+    2.Select on ClientPreferences
+      params: WifiClientsNotificationPreferences
+
+    Functional
+    1.Command 1700
+    3.Send listResponse,commandLengthType ToMobile             //where listResponse = payload
+    4.return DynamicClientPreferencesResponse,socket.userid      // broadcastBuilder.preferences
+
+    Flow 
+    socket(packet)->validator(do)->processor(do)->commandMapping(newPref.do)->dispatcher(dispatchResponse)->broadcastBuilder(preferences)
+
+<a name="1100"></a>
+## 12)RouterSummary (Command 1100)
+    Command no 
+    1100- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,almondMAC
+
+    Redis
+    //(AlmondMAC = <packet.parsedPayload.AlmondMAC>)
+    3.hgetall on AL_<packet.parsedPayload.AlmondMAC>
+    
+    //(prefix+key = ICID_ + <string>, here <string> = random string data), value = null
+    4.get on ICID_<string>
+
+    /*if (client.connected) {
+        client["setex"](key, time, value, callback);
+    }*/
+    5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME
+
+    Queue
+     // (payload,command,almondMAC) to queue
+    8.Send response to o.server
+
+    Functional 
+    1.Command 1100
+    2.Send listResponse,commandLengthType ToMobile        //where listResponse = payload
+    6.delete store[commandID]
+    7.Return commandID
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->commandMapping(almond.onlyUnicast)->dispatcher(dispatchResponse)->dispatcher(unicast)
+
+<a name="23"></a>
+## 13)AffiliationUserRequest (Command 23)
+    Command no 
+    23- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Redis
+    // where, data.code = answer
+    2.get on CODE:<data.code>  
+
+    //(prefix+key = ICID_ + <string>, here <string> = random string data), value = null
+    4.get on ICID_<string>
+
+    /*if (client.connected) {
+        client["setex"](key, time, value, callback);
+    }*/
+    5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME       
+
+    SQl 
+    3.Select on Users
+      params: UserID
+     
+    Queue
+    11.Send AffiliationUserRequestResponse to queue
+ 
+    Functional
+    1.Command 23
+    6.return AffiliationUserCompleteResponse             //newRowBuilder->affiliationError
+    7.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    8.delete store[row.CommandID]
+    9.return CommandID
+    10.return out               //where out = response, unicast->newRowBuilder.affiliation
+
+
 
