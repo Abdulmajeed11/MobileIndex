@@ -54,7 +54,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     SQl
     2.Select on DEVICE_DATA 
-      params: AlmondMAC
+      params: AlmondMAC,DEVICE_DATA
 
     Redis
     3.hgetall on MAC:%s<AlmondMAC>
@@ -75,20 +75,12 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Command,CommandType,Payload,AlmondMAC
 
     SQl
-    2.Select on ALMOND_USERS
-      params: StaticSceneListHash, AlmondMAC
-
-     //if (rows && rows[0] && rows[0].Hash != payload.HashNow)
-    
-    3.Update on ALMOND_USERS
-      params: StaticSceneListHash, AlmondMAC
-
-    4.Select on SCENES 
-      params: AlmondMAC
+    2.Select on SCENES 
+      params: AlmondMAC,SCENES
 
     Functional 
     1.Command 1300
-    5.Send listResponse,commandLengthType ToMobile          //where listResponse = payload
+    3.Send listResponse,commandLengthType ToMobile          //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->genericModel(execute),genericModel(get)->newRowBuilder(scenes)->dispatcher(dispatchResponse)
@@ -102,20 +94,12 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Command,CommandType,Payload
 
     SQl
-    2.Select on ALMOND_USERS
-    params: StaticRuleListHash, AlmondMAC
-
-    //if (rows && rows[0] && rows[0].Hash != payload.HashNow)
-    
-    3.Update on ALMOND_USERS
-      params: StaticRuleListHash, AlmondMAC
-
-    4.Select on RULE 
-      params: AlmondMAC
+    2.Select on RULE 
+      params: AlmondMAC,RULE
 
     Functional 
     1.Command 1400
-    5.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
+    3.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->genericModel(execute),genericModel(get)->newRowBuilder(Rules)->dispatcher(dispatchResponse)
@@ -129,20 +113,12 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Command,CommandType,Payload
 
     SQl
-    2.Select on ALMOND_USERS
-    params: StaticWifiClientListHash, AlmondMAC
-
-    //if (rows && rows[0] && rows[0].Hash != payload.HashNow)
-    
-    3.Update on ALMOND_USERS
-      params: StaticWifiClientListHash, AlmondMAC
-
-    4.Select on WIFICLIENTS 
-      params: AlmondMAC
+    2.Select on WIFICLIENTS 
+      params: AlmondMAC,WIFICLIENTS
 
     Functional 
     1.Command 1500
-    5.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
+    3.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
     
     Flow
     socket(packet)->validator(do)->processor(do)->genericModel(execute),genericModel(get)->newRowBuilder(clients)->dispatcher(dispatchResponse)
