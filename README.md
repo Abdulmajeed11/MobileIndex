@@ -19,6 +19,9 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [UpdateClientPreferences (Command 1700)](#1700d)
 - [RouterSummary (Command 1100)](#1100)
 - [AffiliationUserRequest (Command 23)](#23)
+- [IOTScanResults (Command 1013)](#1013)
+- [UpdateNotificationRegistration (Command 1800)](#1800)
+- [Logout (Command 1900)](#1900)
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -54,10 +57,12 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     SQl
     2.Select on DEVICE_DATA 
-      params: AlmondMAC,DEVICE_DATA
+      params: AlmondMAC
 
     Redis
-    3.hgetall on MAC:%s<AlmondMAC>
+
+    multi
+    3.hgetall on (MAC:%s+:%s,AlmondMAC,DeviceValues)       // Ids=DeviceValues,mac=AlmondMAC  
 
     Functional 
     1.Command 1200
@@ -76,7 +81,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     SQl
     2.Select on SCENES 
-      params: AlmondMAC,SCENES
+      params: AlmondMAC
 
     Functional 
     1.Command 1300
@@ -95,7 +100,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     SQl
     2.Select on RULE 
-      params: AlmondMAC,RULE
+      params: AlmondMAC
 
     Functional 
     1.Command 1400
@@ -114,7 +119,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     SQl
     2.Select on WIFICLIENTS 
-      params: AlmondMAC,WIFICLIENTS
+      params: AlmondMAC
 
     Functional 
     1.Command 1500
@@ -154,13 +159,12 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     2.hgetall on UID_<UserID>          // where UserID = packet.userid        
  
     Queue
-    5.Send SubscribeMeResponse to config.HTTP_SERVER_NAME
+    4.Send SubscribeMeResponse to config.HTTP_SERVER_NAME
      
     Functional
     1.Command 1011
-    3.socketStore[packet.userid]         // MS.getSocket->MS.hget
-    4.delete store[data.UnicastID]       // requestQueue->cleanup
-    6.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
+    3.delete store[data.UnicastID]                           // requestQueue->cleanup
+    5.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
   
     Flow 
     socket(packet)->validator(do)->processor(do)->commandMapping(SC.subscriptionCommands)-
@@ -213,20 +217,19 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Command,CommandType,Payload
 
     Redis
-    6.hgetall on UID_<userlist>
+    5.hgetall on UID_<userlist>
 
     SQl
     2.Delete on NotificationPreferences
       params: AlmondMAC,UserID
 
     Queue
-    7.Send DynamicDevicePreferencesResponse to (key.substring(redisConstants.QUEUE.length, key.length))
+    6.Send DynamicDevicePreferencesResponse to (key.substring(redisConstants.QUEUE.length, key.length))
 
     Functional
     1.Command 1700
     3.Send listResponse,commandLengthType ToMobile               //where listResponse = payload
-    4.socketStore(userList)
-    5.Send DynamicDevicePreferencesResponse ToMobile
+    4.Send DynamicDevicePreferencesResponse ToMobile
 
     Flow
     socket(packet)->validator(do)->processor(do)->notiPrefs(do)->genericModel(delete)->oldRowBuilder(newPref)->dispatcher(dispatchResponse)->dispatcher(broadcast)->broadcastBuilder(preferences)
@@ -240,20 +243,19 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Command,CommandType,Payload
 
     Redis
-    6.hgetall on UID_<userlist>
+    5.hgetall on UID_<userlist>
 
     SQl
     2.Delete on ClientPreferences
       params: AlmondMAC,UserID
     
     Queue
-    7.Send DynamicClientPreferencesResponse to (key.substring(redisConstants.QUEUE.length, key.length))
+    6.Send DynamicClientPreferencesResponse to (key.substring(redisConstants.QUEUE.length, key.length))
 
     Functional
     1.Command 1700
     3.Send listResponse,commandLengthType ToMobile             //where listResponse = payload
-    4.socketStore(userList)
-    5.Send DynamicClientPreferencesResponse ToMobile
+    4.Send DynamicClientPreferencesResponse ToMobile
 
     Flow 
     socket(packet)->validator(do)->processor(do)->notiPrefs(do)->genericModel(delete)->oldRowBuilder(newPref)->dispatcher(dispatchResponse)->dispatcher(broadcast)->broadcastBuilder(preferences)
@@ -310,5 +312,67 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Flow
     socket(packet)->validator(do)->processor(do)->commandMapping(affiliation.execute)->redisManager(getCode)->sqlManager(getEmail)->cid-bid(incCommandID)->newRowBuilder(affiliationError)->dispatcher(dispatchResponse)->dispatcher(unicast)->broadcaster(unicast)
 
+<a name="1013"></a>
+## 14)IOTScanResults (Command 1013)
+    Command no 
+    1013- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,AlmondMAC
+    
+    SQl
+    2.Select on IOT_Scanner
+      params: AlmondMAC
 
+    Functional
+    1.Command 1013
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
+    Flow
+    socket(packet)->validator(do)->processor(do)->almond(IOTScan)->newRowBuilder(IOTScan)->dispatcher(dispatchResponse)
+
+<a name="1800"></a>
+## 15)UpdateNotificationRegistration (Command 1800)
+    Command no 
+    1800- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    SQl
+    2.Insert on NotificationID
+      // Here Params = parsedPayload
+
+    Functional
+    1.Command 1800
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->notificationNew(do)->oldRowBuilder(notificationNew)->dispatcher(dispatchResponse)
+
+<a name="1900"></a>
+## 16)Logout (Command 1900)
+    Command no 
+    1900- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Redis
+    4.hmset on UID_<socket.userid>      // values = Q_config.SERVER_NAME,userSession.length - 1
+
+    SQl
+    2.Delete on UserTempPasswords
+      params: UserID,TempPassword
+
+    6.Delete on NotificationID
+      // here, params = parsedPayload
+    
+    Functional
+    1.Command 1900
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    5.delete socketStore[userid]           //if (userSession.length == 1) 
+    7.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->Login(Logout)->connection-pool(queryFunction)->oldRowBuilder(logoutJSON)->dispatcher(dispatchResponse)->dispatcher(socketHandler)->mongo-store(remove)->redisManager(redisExecute)->secondaryModels(notificationNew.do)->oldRowBuilder(notificationNew)->dispatcher(dispatchResponse)
