@@ -30,6 +30,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [GetClientPreferences (Command 1526)](#1526)
 - [Login (Command 1003)](#1003)
 - [Login (Command 1)](#1)
+- [UserProfileRequest (Command 1110)](#1110)
+- [Logoutall (Command 4)](#4)
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -528,7 +530,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 <a name="1526"></a>
 ## 22)GetClientPreferences (Command 1526)
     Command no 
-    1525- JSON format
+    1526- JSON format
  
     Required 
     Command,CommandType,Payload,UserID
@@ -565,9 +567,6 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
       params:UserID,TempPassword,LastUsedTime
     8.Select on Subscriptions
       params: AlmondMAC
-     
-   /* (o.minRemaining = o.signupTS;
-    if (o.signupTS < 0) o.minRemaining = o.signupHour >= 8 ? (8 - o.signupHour + 24) * 60 : (8 - o.signupHour) * 60;)*/     (Doubt in login.js)
 
     Functional
     1.Command 1003
@@ -580,7 +579,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 <a name="1"></a>
 ## 24)Login (Command 1)
     Command no 
-    1003- JSON format
+    1- JSON format
  
     Required 
     Command,CommandType,Payload,UserID,AlmondMAC
@@ -606,3 +605,55 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     Flow
     socket(packet)->validator(do)->validator(login)->logging(errorLog)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)->login(GetSubscriptions)->oldRowBuilder(subscriptions)->dispatcher(dispatchResponse)
+
+<a name="1110"></a>
+## 25)UserProfileRequest (Command 1110)
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID
+
+    SQl
+    2.Select on Users
+      params: UserID
+
+    Functional
+    1.Command 1110
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->account-manager-json(UserProfile)->newRowBuilder(UserProfile)->dispacher(dispatchResponse)
+
+<a name="4"></a>
+## 26)Logoutall (Command 4)
+    Command no 
+    4- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID
+  
+    Redis
+    7.hmset on UID_<userid>        // where values = [Q_config.SERVER_NAME,0]
+  
+    multi
+    8.hgetall on UID_<userID>          // (redisConstants)
+
+    SQl
+    2.Select on Users
+      params: UserID
+    3.Delete on UserTempPasswords
+      params: UserID
+    4.Delete on NotificationID
+     params: UserID
+
+    Queue
+    9.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+
+    Functional
+    1.Command 4
+    5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    6.delete socketStore[userid]
+
+    Flow
+    socket(packet)->validator(do)->validator(checkCredentials)->sqlManager(getUser)->login(logoutAll)->connection-pool(queryFunction)->oldRowBuilder(logoutAll)->dispacher(dispatchResponse)->mongo-store(removeAll)->dispatcher(broadcast)->broadCastBuilder(removeAll)->broadcaster(broadcast)
