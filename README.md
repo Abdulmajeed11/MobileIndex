@@ -32,6 +32,17 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [Login (Command 1)](#1)
 - [UserProfileRequest (Command 1110)](#1110)
 - [Logoutall (Command 4)](#4)
+- [Logout (Command 3)](#3)
+- [Signup (Command 6)](#6)
+- [CloudSanity (Command 102)](#102)
+- [NotificationPreferenceList (Command 113)](#113)
+- [AlmondModeRequest (Command 151)](#151)
+- [NotificationAddRegistration (Command 281)](#281)
+- [NotificationDeleteRegistration (Command 283)](#283)
+- [Command 804 (Client)](#804a)
+- [Command 804 (Device)](#804b)
+- [Command 806](#806)
+- [NotificationPreferences(Command 300)](#300)
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -567,7 +578,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
       params:UserID,TempPassword,LastUsedTime
     8.Select on Subscriptions
       params: AlmondMAC
-
+     
     Functional
     1.Command 1003
     6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
@@ -657,3 +668,235 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     Flow
     socket(packet)->validator(do)->validator(checkCredentials)->sqlManager(getUser)->login(logoutAll)->connection-pool(queryFunction)->oldRowBuilder(logoutAll)->dispacher(dispatchResponse)->mongo-store(removeAll)->dispatcher(broadcast)->broadCastBuilder(removeAll)->broadcaster(broadcast)
+
+<a name="3"></a>
+## 27)Logout (Command 3)
+    Command no 
+    3- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID
+ 
+    Redis
+    4.hmset on UID_<socket.userid>      //values = [Q_config.SERVER_NAME,userSession.length-1]
+
+    SQl
+    2.Delete on UserTempPasswords
+     params: UserID,TemmpPassword
+
+    Functional
+    1.Command 3
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    5.delete socketStore[socket.userid]
+
+    Flow
+    socket(packet)->validator(do)->login(logout)->oldRowBuilder(logout)->dispacher(dispatchResponse)->mongo-store(remove)
+
+<a name="6"></a>
+## 28)Signup (Command 6)
+    Command no 
+    6- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID
+
+    Redis
+    4.hmset on UID_<socket.userid>      //values = [Q_config.SERVER_NAME,userSession.length-1] 
+
+    SQl
+    2.Select on Users
+      params: EmailID 
+
+    Functional 
+    1.Command 6
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    5.delete socketStore[socket.userid]
+    
+    Flow
+    socket(packet)->validator(do)->accountSetup(Mob_Signup)->oldRowBuilder(accountSetup)->dispacher(dispatchResponse)->mongo-store(remove)
+
+<a name="102"></a>
+## 29)CloudSanity (Command 102)
+    Command no 
+    102- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 102
+    2.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->almond(sanity_check)->oldRowBuilder(dummy)->dispacher(dispatchResponse)
+
+<a name="113"></a>
+## 30)NotificationPreferenceList (Command 113)
+    Command no 
+    113- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    SQl
+    2.Select on NotificationPreferences
+      params: AlmondMAC,UserID
+
+    Functional
+    1.Command 113
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notificationPreferences(get_notification_preference_list)->oldRowBuilder(get_notification_preference_list)->dispacher(dispatchResponse)
+
+<a name="151"></a>
+## 31)AlmondModeRequest (Command 151)
+    Command no 
+    151- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    SQl
+    2.select on AlmondPreferences
+    params:T1.AlmondMAC
+
+    Functional
+    1.Command 151
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->almond(get_almondmode)->oldRowBuilder(get_almondmode)->dispacher(dispatchResponse)
+
+<a name="281"></a>
+## 32)NotificationAddRegistration (Command 281)
+    Command no 
+    281- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    SQl
+    2.Select on NotificationID
+      params:HashVal
+
+    //if (rows.length == 0)
+    3.Insert on NotificationID
+      params: HashVal, RegID, UserID, Platform
+
+            (or)
+
+    //if (rows.length == 1)
+    3.Update on NotificationID
+      params:  UserID,Platform,RegID
+
+    Functional
+    1.Command 281   
+    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notification(Mobile_Notification_Registration)->oldRowBuilder(notificationAddRegistration)->dispacher(dispatchResponse)
+
+<a name="283"></a>
+## 33)NotificationDeleteRegistration (Command 283)
+    Command no 
+    283- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    SQl
+    2.Delete on NotificationID
+      params:HashVal,RegID,UserID, 
+
+    Functional
+    1.Commad 283
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notification(Mobile_Notification_Delete_Registration)->oldRowBuilder(notificationDeleteRegistration)->dispacher(dispatchResponse)
+
+<a name="804a"></a>
+## 34.Command 804 (Client)
+    Command no 
+    804- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,AlmondMAC,ClientID
+
+    SQl
+    2.Select on WifiClients
+      params:AlmondMAC,ClientID
+    3.Select on dynamic_log
+      params: mac,id
+    4.Select on dynamic_log           //if (data.type != undefined && data.type == "wifi_client"
+      params: mac,id
+
+    Functional
+    1.Command 804
+    5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
+
+<a name="804b"></a>
+## 35.Command 804 (Device)
+    Command no 
+    804- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,DeviceID
+       
+    SQl
+    2.Select on dynamic_log
+      params: mac,id
+
+    Functional
+    1.Command 804
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
+
+<a name="806"></a>
+## 36.Command 806 
+    Command no 
+    806- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 806
+    2.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notificationFetcher(makeBadgeZero)->oldRowBuilder(clear_the_badge)->dispacher(dispatchResponse)
+
+<a name="300"></a>
+## 37.NotificationPreferences(Command 300)
+    Command no 
+    300- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Redis
+
+    multi
+    5.hgetall on UID_<userID>          // (redisConstants)
+
+    Queue
+    6.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+
+    SQl
+    2.Insert on NotificationPreferences
+      params: AlmondMAC, DeviceID, UserID,IndexVal, NotificationType
+
+    Functional
+    1.Command 300
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->notificationPreferences(update_notification_preferences)->oldRowBuilder(notificationPreferences)->dispacher(dispatchResponse)->dispatcher(broadcast)->broadcastBuilder(defaultXML)->broadcaster(broadcast)
