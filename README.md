@@ -43,6 +43,10 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [Command 804 (Device)](#804b)
 - [Command 806](#806)
 - [NotificationPreferences(Command 300)](#300)
+- [Command 800](#800)
+- [ChangeUser (Command 1060,Action:Add)](#1060a)
+- [ChangeUser (Command 1060,Action:Update)](#1060b)
+- [Super login (Command 1004)](#1004)
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -585,7 +589,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     9.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->validator(login)->logging(errorLog)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)->login(GetSubscriptions)->oldRowBuilder(subscriptions)->dispatcher(dispatchResponse)
+    socket(packet)->validator(do)->validator(login)->logging(errorLog)->processor(do)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)->login(GetSubscriptions)->oldRowBuilder(subscriptions)->dispatcher(dispatchResponse)
 
 <a name="1"></a>
 ## 24)Login (Command 1)
@@ -615,7 +619,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     9.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->validator(login)->logging(errorLog)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)->login(GetSubscriptions)->oldRowBuilder(subscriptions)->dispatcher(dispatchResponse)
+    socket(packet)->validator(do)->validator(login)->logging(errorLog)->processor(do)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)->login(GetSubscriptions)->oldRowBuilder(subscriptions)->dispatcher(dispatchResponse)
 
 <a name="1110"></a>
 ## 25)UserProfileRequest (Command 1110)
@@ -667,7 +671,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     6.delete socketStore[userid]
 
     Flow
-    socket(packet)->validator(do)->validator(checkCredentials)->sqlManager(getUser)->login(logoutAll)->connection-pool(queryFunction)->oldRowBuilder(logoutAll)->dispacher(dispatchResponse)->mongo-store(removeAll)->dispatcher(broadcast)->broadCastBuilder(removeAll)->broadcaster(broadcast)
+    socket(packet)->validator(do)->validator(checkCredentials)->sqlManager(getUser)->processor(do)->login(logoutAll)->connection-pool(queryFunction)->oldRowBuilder(logoutAll)->dispacher(dispatchResponse)->mongo-store(removeAll)->dispatcher(broadcast)->broadCastBuilder(removeAll)->broadcaster(broadcast)
 
 <a name="3"></a>
 ## 27)Logout (Command 3)
@@ -690,7 +694,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.delete socketStore[socket.userid]
 
     Flow
-    socket(packet)->validator(do)->login(logout)->oldRowBuilder(logout)->dispacher(dispatchResponse)->mongo-store(remove)
+    socket(packet)->validator(do)->processor(do)->login(logout)->oldRowBuilder(logout)->dispacher(dispatchResponse)->mongo-store(remove)
 
 <a name="6"></a>
 ## 28)Signup (Command 6)
@@ -713,7 +717,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.delete socketStore[socket.userid]
     
     Flow
-    socket(packet)->validator(do)->accountSetup(Mob_Signup)->oldRowBuilder(accountSetup)->dispacher(dispatchResponse)->mongo-store(remove)
+    socket(packet)->validator(do)->processor(do)->accountSetup(Mob_Signup)->oldRowBuilder(accountSetup)->dispacher(dispatchResponse)->mongo-store(remove)
 
 <a name="102"></a>
 ## 29)CloudSanity (Command 102)
@@ -728,7 +732,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     2.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->almond(sanity_check)->oldRowBuilder(dummy)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->almond(sanity_check)->oldRowBuilder(dummy)->dispacher(dispatchResponse)
 
 <a name="113"></a>
 ## 30)NotificationPreferenceList (Command 113)
@@ -747,7 +751,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notificationPreferences(get_notification_preference_list)->oldRowBuilder(get_notification_preference_list)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notificationPreferences(get_notification_preference_list)->oldRowBuilder(get_notification_preference_list)->dispacher(dispatchResponse)
 
 <a name="151"></a>
 ## 31)AlmondModeRequest (Command 151)
@@ -766,7 +770,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->almond(get_almondmode)->oldRowBuilder(get_almondmode)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->almond(get_almondmode)->oldRowBuilder(get_almondmode)->dispacher(dispatchResponse)
 
 <a name="281"></a>
 ## 32)NotificationAddRegistration (Command 281)
@@ -795,7 +799,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notification(Mobile_Notification_Registration)->oldRowBuilder(notificationAddRegistration)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notification(Mobile_Notification_Registration)->oldRowBuilder(notificationAddRegistration)->dispacher(dispatchResponse)
 
 <a name="283"></a>
 ## 33)NotificationDeleteRegistration (Command 283)
@@ -814,7 +818,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notification(Mobile_Notification_Delete_Registration)->oldRowBuilder(notificationDeleteRegistration)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notification(Mobile_Notification_Delete_Registration)->oldRowBuilder(notificationDeleteRegistration)->dispacher(dispatchResponse)
 
 <a name="804a"></a>
 ## 34.Command 804 (Client)
@@ -837,7 +841,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
 
 <a name="804b"></a>
 ## 35.Command 804 (Device)
@@ -856,7 +860,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
 
 <a name="806"></a>
 ## 36.Command 806 
@@ -871,7 +875,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     2.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notificationFetcher(makeBadgeZero)->oldRowBuilder(clear_the_badge)->dispacher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notificationFetcher(makeBadgeZero)->oldRowBuilder(clear_the_badge)->dispacher(dispatchResponse)
 
 <a name="300"></a>
 ## 37.NotificationPreferences(Command 300)
@@ -899,4 +903,115 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->notificationPreferences(update_notification_preferences)->oldRowBuilder(notificationPreferences)->dispacher(dispatchResponse)->dispatcher(broadcast)->broadcastBuilder(defaultXML)->broadcaster(broadcast)
+    socket(packet)->validator(do)->processor(do)->notificationPreferences(update_notification_preferences)->oldRowBuilder(notificationPreferences)->dispacher(dispatchResponse)->dispatcher(broadcast)->broadcastBuilder(defaultXML)->broadcaster(broadcast)
+
+<a name="800"></a>
+## 38.Command 800
+    Command no 
+    800- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    
+    SQl
+    2.Select on notification_store.notification_records 
+    params:usr_id
+
+    Functional
+    1.Command 800
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->notificationFetcher(getNotifications)->oldRowBuilder(get_notifications)->dispacher(dispatchResponse)
+
+<a name="1060a"></a>
+## 39.ChangeUser (Command 1060,Action:Add) 
+    Command no 
+    1060- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,AlmondMAC,UserID
+
+    Redis
+    3.hgetall on AL_<payload.AlmondMAC>
+
+    multi
+    6.hgetall on UID_<userID>          // (redisConstants)
+
+    Queue
+    7.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+
+
+    SQl
+    2.update on AlmondplusDB.WifiClients
+    params:UserName,AlmondMAC,ClientID
+
+    Functional
+    1.Command 1060
+    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->clientModel(update)->newRowBuilder(change_user)->dispatcher(broadcast)->broadcastBuilder(change_user)->broadcaster(broadcast)
+
+<a name="1060b"></a>
+## 39.ChangeUser (Command 1060,Action:Update) 
+    Command no 
+    1060- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,AlmondMAC,UserID
+
+    Redis
+    4.hgetall on AL_<payload.AlmondMAC>
+
+    multi
+    7.hgetall on UID_<userID>          // (redisConstants)
+
+    Queue
+    8.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+
+    SQl
+    2.Update on AlmondplusDB.WifiClients 
+      params: UserName,AlmondMAC, UserName
+
+    3.Update on AlmondplusDB.WifiClients 
+      params: UserName,AlmondMAC,ClientID
+
+    Functional
+    1.Command 1060
+    5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->clientModel(update)->newRowBuilder(change_user)->dispatcher(broadcast)->broadcastBuilder(change_user)->broadcaster(broadcast)
+    
+
+<a name="1004"></a>
+## 40.SUPER_LOGIN (Command 1004) 
+    Command no 
+    1004- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Redis
+    5.hgetall on UID_<data.UserID> 
+    7.hincrby on UID_<data.UserID>         //values = (Q_<config.SERVER_NAME>,1)
+
+    SQl
+    2.Insert on logging.error_log
+      params: date,time,ip,server,category,error
+    3.Select on Users
+      params: EmailID
+    4.Insert on UserTempPasswords
+      params:UserID,TempPassword,LastUsedTime
+    
+
+    Functional
+    1.Command 1004
+    6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->validator(login)->logging(errorLog)->processor(do)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)
