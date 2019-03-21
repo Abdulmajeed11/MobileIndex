@@ -62,7 +62,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME
 
     Queue
-    7.Send response to server_name        // (payload,command,almondMAC) to queue
+    7.Send response to config.SERVER_NAME        // (payload,command,almondMAC) to queue
 
     Functional 
     1.Command 1061
@@ -87,7 +87,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Redis
 
     multi
-    3.hgetall on (MAC:%s+:%s,AlmondMAC,DeviceValues)       // Ids=DeviceValues,mac=AlmondMAC  
+    3.hgetall on (MAC:<AlmondMAC>,DeviceValues) 
+    //Here, multi is done on all AlmondMAC and the IDs present in DeviceValues  
 
     Functional 
     1.Command 1200
@@ -244,14 +245,14 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Redis
 
     multi
-    5.hgetall on UID_<userlist>
+    5.hgetall on UID_<userID>             /here, multi is done on every userID in UserList
 
     SQl
     2.Delete on NotificationPreferences
       params: AlmondMAC,UserID
 
     Queue
-    6.Send DynamicDevicePreferencesResponse to S11        //where S11 = (redisQueue)
+    6.Send DynamicDevicePreferencesResponse to MobileQueue   
 
     Functional
     1.Command 1700
@@ -272,14 +273,14 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Redis
 
     multi
-    5.hgetall on UID_<userlist>
+    5.hgetall on UID_<userID>          //here, multi is done on every userID in UserList
 
     SQl
     2.Delete on ClientPreferences
       params: AlmondMAC,UserID
     
     Queue
-    6.Send DynamicClientPreferencesResponse to S11               //where S11 = (redisQueue)
+    6.Send DynamicClientPreferencesResponse to MobileQueue            
 
     Functional
     1.Command 1700
@@ -351,7 +352,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     
     SQl
     2.Select on IOT_Scanner
-      params: AlmondMAC
+      params: mac
 
     Functional
     1.Command 1013
@@ -377,7 +378,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->processor(do)->notificationNew(do)->oldRowBuilder(notificationNew)->dispatcher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notificationNew(do)->genericModel(insertOrUpdate)->oldRowBuilder(notificationNew)->dispatcher(dispatchResponse)
 
 <a name="1900"></a>
 ## 16)Logout (Command 1900)
@@ -445,13 +446,13 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME
 
     7.setex on CODE:<data.code>     
-    //(prefix+key),value=res.mac,SERVER_NAME, socket.userid,commandID,res.emailID
+    //(prefix+key),values =res.mac,SERVER_NAME, socket.userid,commandID,res.emailID
         
     SQl 
     3.Select on Users
       params: UserID
     6.Select on SCSIDB.CMSAffiliations
-     params:AlmondMAC
+      params:AlmondMAC
  
     Queue
     10. Send Response to queue  
@@ -499,7 +500,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Required 
     Command,CommandType,Payload,AlmondMAC
 
-    SQl
+    Cassandra
     2.Select on almondhistory
     params: mac,type
 
@@ -512,7 +513,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
-    socket(packet)->validator(do)->processor(do)->notificationFetcher(almondHistroy)->newRowBuilder(almondHistroy)->dispatcher(dispatchResponse)
+    socket(packet)->validator(do)->processor(do)->notificationFetcher(almondHistroy)->newRowBuilder(almondHistroy)->dispatcher(dispatchResponse)->dispatcher(unicast)->newRowBuilder(restoreData)->broadcaster(unicast)
 
 <a name="1525"></a>
 ## 21)UpdateClientPreferences (Command 1525)
@@ -525,14 +526,14 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Redis
 
     multi
-    5.hgetall on UID_<userID>          // (redisConstants)
+    5.hgetall on UID_<userID>          //here, multi is done on every userID in UserList
 
     SQl
     2.Insert on WifiClientsNotificationPreferences
       params:AlmondMAC,ClientID,UserID,NotificationType
 
     Queue
-    6.Send UpdateClientPreferencesResponse to S11            //where S11 = (redisQueue)
+    6.Send UpdateClientPreferencesResponse to MobileQueue
     
     Functional
     1.Command 1525
@@ -573,16 +574,18 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.hgetall on UID_<data.UserID> 
     7.hincrby on UID_<data.UserID>         //values = (Q_<config.SERVER_NAME>,1)
 
-    SQl
+    Cassandra
     2.Insert on logging.error_log
       params: date,time,ip,server,category,error
+    
+    SQl
     3.Select on Users
       params: EmailID
     4.Insert on UserTempPasswords
       params:UserID,TempPassword,LastUsedTime
     8.Select on Subscriptions
       params: AlmondMAC
-     
+
     Functional
     1.Command 1003
     6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
@@ -603,9 +606,11 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.hgetall on UID_<data.UserID> 
     7.hincrby on UID_<data.UserID>         //values = (Q_<config.SERVER_NAME>,1)
 
-    SQl
+    Cassandra
     2.Insert on logging.error_log
       params: date,time,ip,server,category,error
+
+    SQl  
     3.Select on Users
       params: EmailID
     4.Insert on UserTempPasswords
@@ -652,7 +657,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     7.hmset on UID_<userid>        // where values = [Q_config.SERVER_NAME,0]
   
     multi
-    8.hgetall on UID_<userID>          // (redisConstants)
+    8.hgetall on UID_<userID>          //here, multi is done on every userID in UserList
 
     SQl
     2.Select on Users
@@ -663,7 +668,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
      params: UserID
 
     Queue
-    9.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+    9.Send UserProfileResponse to MobileQueue            
 
     Functional
     1.Command 4
@@ -691,6 +696,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Functional
     1.Command 3
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+   
+    //if (userSession.length == 1)
     5.delete socketStore[socket.userid]
 
     Flow
@@ -714,6 +721,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Functional 
     1.Command 6
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    //if (userSession.length == 1)
     5.delete socketStore[socket.userid]
     
     Flow
@@ -811,7 +820,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     SQl
     2.Delete on NotificationID
-      params:HashVal,RegID,UserID, 
+      params:HashVal,RegID,UserID,Platform
 
     Functional
     1.Commad 283
@@ -831,14 +840,14 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     SQl
     2.Select on WifiClients
       params:AlmondMAC,ClientID
+   
+    Cassandra
     3.Select on dynamic_log
       params: mac,id
-    4.Select on dynamic_log           //if (data.type != undefined && data.type == "wifi_client"
-      params: mac,id
-
+   
     Functional
     1.Command 804
-    5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
     socket(packet)->validator(do)->processor(do)->notification(get_logs)->notificationFetcher(getLogs)->oldRowBuilder(getLogs)->dispacher(dispatchResponse)
@@ -851,7 +860,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Required 
     Command,CommandType,Payload,DeviceID
        
-    SQl
+    Cassandra
     2.Select on dynamic_log
       params: mac,id
 
@@ -888,10 +897,10 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Redis
 
     multi
-    5.hgetall on UID_<userID>          // (redisConstants)
+    5.hgetall on UID_<userID>     //here, multi is done on every userID in UserList
 
     Queue
-    6.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+    6.Send UserProfileResponse to MobileQueue            
 
     SQl
     2.Insert on NotificationPreferences
@@ -913,8 +922,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Required 
     Command,CommandType,Payload
 
-    
-    SQl
+    Cassandra
     2.Select on notification_store.notification_records 
     params:usr_id
 
@@ -937,11 +945,10 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     3.hgetall on AL_<payload.AlmondMAC>
 
     multi
-    6.hgetall on UID_<userID>          // (redisConstants)
+    6.hgetall on UID_<userID>          //here, multi is done on every userID in UserList
 
     Queue
-    7.Send UserProfileResponse to S11            //where S11 = (redisQueue)
-
+    7.Send UserProfileResponse to MobileQueue            
 
     SQl
     2.update on AlmondplusDB.WifiClients
@@ -956,7 +963,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     socket(packet)->validator(do)->processor(do)->clientModel(update)->newRowBuilder(change_user)->dispatcher(broadcast)->broadcastBuilder(change_user)->broadcaster(broadcast)
 
 <a name="1060b"></a>
-## 39.ChangeUser (Command 1060,Action:Update) 
+## 40.ChangeUser (Command 1060,Action:Update) 
     Command no 
     1060- JSON format
  
@@ -967,10 +974,10 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     4.hgetall on AL_<payload.AlmondMAC>
 
     multi
-    7.hgetall on UID_<userID>          // (redisConstants)
+    7.hgetall on UID_<userID>         //here, multi is done on every userID in UserList
 
     Queue
-    8.Send UserProfileResponse to S11            //where S11 = (redisQueue)
+    8.Send UserProfileResponse to MobileQueue           
 
     SQl
     2.Update on AlmondplusDB.WifiClients 
@@ -989,7 +996,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     
 
 <a name="1004"></a>
-## 40.SUPER_LOGIN (Command 1004) 
+## 41.SUPER_LOGIN (Command 1004) 
     Command no 
     1004- JSON format
  
@@ -1000,9 +1007,12 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.hgetall on UID_<data.UserID> 
     7.hincrby on UID_<data.UserID>         //values = (Q_<config.SERVER_NAME>,1)
 
-    SQl
+   
+    Cassandra
     2.Insert on logging.error_log
       params: date,time,ip,server,category,error
+    
+    SQl
     3.Select on Users
       params: EmailID
     4.Insert on UserTempPasswords
