@@ -22,7 +22,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [IOTScanResults (Command 1013)](#1013)
 - [UpdateNotificationRegistration (Command 1800)](#1800)
 - [Logout (Command 1900)](#1900)
-- [Command 61](#61) 
+- [AlmondModeChange (Command 61)](#61) 
 - [AffiliationUserRequest (Command 1023)](1023)
 - [GetAlmondList (Command 1112)](#1112) 
 - [Restore (Command 2222)](#2222)
@@ -47,6 +47,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [ChangeUser (Command 1060,Action:Add)](#1060a)
 - [ChangeUser (Command 1060,Action:Update)](#1060b)
 - [Super login (Command 1004)](#1004)
+- [UnlinkAlmondRequest (Command 1110)](#1110a) 
+- [UserInviteRequest (Command 1110](#1110b) 
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -409,7 +411,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
 
 <a name="61"></a>
-## 17)Command 61
+## 17)AlmondModeChange (Command 61)
     Command no 
     61- JSON format
  
@@ -1025,3 +1027,79 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 
     Flow
     socket(packet)->validator(do)->validator(login)->logging(errorLog)->processor(do)->login(Mob_Login)->redisManager(getAllAlmonds)->oldRowBuilder(loginJSON)->dispatcher(dispatchResponse)->mongo-store(add)->redisManager(redisExecute)
+
+<a name="1110a"></a>
+## 42.UnlinkAlmondRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,AlmondMAC
+     
+    Redis
+    4.hgetall on AL_<data.AlmondMAC>
+
+    SQl
+    2.Select on Users
+      params:EmailID
+
+    Queue
+    5.Send UnlinkAlmondRequestResponse to AlmondServer
+
+    Functional
+    1.Command 1110
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+ 
+    Flow
+    socket(packet)->validator(do)->validator(unlink),validator(checkCredentials)->sqlManager(getUser)->processor(do)->account-manager-json(UnlinkAlmond)->rowBuilder(defaultReply)->dispatcher(unicast)->dispatcher(dispatchResponse)->account-manager-json(getAlmond)->broadcastBuilder(unlink)->broadcaster(unicast)
+
+<a name="1110b"></a>
+## 43.UserInviteRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,AlmondMAC
+
+    SQl
+    2.Select on Users
+      params: UserID
+    4.Select on AlmondSecondaryUsers
+      params: AlmondMAC,UserID
+    5.Insert on AlmondSecondaryUsers
+      params:AlmondMAC,userID
+    8.Select on Users
+      params: UserID
+
+    Redis
+    3.hgetall on UID_<userid>
+    6.hmset on AL_<JsonObj.AlmondMAC>      //where value = [SUSER_<UserID>,1]
+    7.hmset on UID_<userid>               //where value = [SMAC_<JsonObj.AlmondMAC>,1]
+    9.hgetall on AL_<AlmondMAC>
+
+    multi
+    13.hgetall on UID_<data.SecondaryUsers>     //here, multi is done on every SecondaryUser 
+
+    Queue
+    11.Send UserInviteRequestResponse to queue
+    14.Send UserInviteRequestResponse to MobileQueue
+    
+    Functional
+    1.Command 1110
+    10.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    12.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->account-manager-json(UserInvite)->sqlManager(checkSecondary),sqlManager(addSecondaryAlmond)->redisManager(addSecondaryAlmond)->sqlManager(getEmail)->redisManager(getAlmond)->rowBuilder(defaultReply)->dispatcher(dispatchResponse)->dispatcher(unicast)->rowBuilder(userChange)->rowBuilder(userChange)->broadcaster(unicast)->dispatcher(broadcast)->broadcastBuilder(almondAdd),broadcastBuilder(userAdd)->broadcaster(broadcast)
+
+
+    
+
+
+
+
+
+
+
+
+
