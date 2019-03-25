@@ -48,7 +48,15 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [ChangeUser (Command 1060,Action:Update)](#1060b)
 - [Super login (Command 1004)](#1004)
 - [UnlinkAlmondRequest (Command 1110)](#1110a) 
-- [UserInviteRequest (Command 1110](#1110b) 
+- [UserInviteRequest (Command 1110](#1110b)
+- [UpdateUserProfileRequest (Command 1110)](#1110c)
+- [DeleteSecondaryUserRequest (Command 1110)](#1110d)
+- [DeleteMeAsSecondaryUserRequest (Command 1110)](#1110e)
+- [ChangePasswordRequest (Command 1110)](#1110f) 
+- [DeleteAccountRequest (Command 1110)](#1110g)
+- [PaymentDetails (Command 1011)](#1011a)
+- [UpdateCard (Command 1011)](#1011b)
+- [DeleteSubscription (Command 1011)](#1011c)
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -176,7 +184,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     socket(packet)->validator(do)->processor(do)->almond(AlmondProperties)->newRowBuilder(almondProperties)->dispatcher(dispatchResponse)
 
 <a name="1011"></a>
-## 7) Command 1011 
+## 7) SubscribeMe (Command 1011) 
     Command no
     1011- JSON format 
 
@@ -184,14 +192,14 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Command,CommandType,Payload
 
     Redis  
-    2.hgetall on UID_<UserID>          // where UserID = packet.userid        
- 
+    2.hgetall on UID_<packet.userid>      // values = PMAC_<AlmondMAC>
+     
     Queue
     4.Send SubscribeMeResponse to config.HTTP_SERVER_NAME
      
     Functional
     1.Command 1011
-    3.delete store[data.UnicastID]                           // requestQueue->cleanup
+    3.delete store[data.UnicastID]                           
     5.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
   
     Flow 
@@ -306,7 +314,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME
 
     Queue
-    7.Send response to server_name        // (payload,command,almondMAC) to queue
+    7.Send response to config.SERVER_NAME        // (payload,command,almondMAC) to queue
 
     Functional 
     1.Command 1061
@@ -334,7 +342,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
       params: UserID
      
     Queue
-    8.Send AffiliationUserRequestResponse to queue       //(where queue = payload.queue)
+    8.Send AffiliationUserRequestResponse to rows.server
  
     Functional
     1.Command 23
@@ -424,7 +432,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     5.setex on ICID_<string>            // (prefix + key), value = SERVER_NAME
 
     Queue
-    7.Send response to server_name        // (payload,command,almondMAC) to queue
+    7.Send response to config.SERVER_NAME       // (payload,command,almondMAC) to queue
 
     Functional 
     1.Command 61
@@ -457,9 +465,8 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
       params:AlmondMAC
  
     Queue
-    10. Send Response to queue  
-    // where repsonse=command, payload,almondMAC, queue= payload.queue 
-
+    10. Send AffiliationAlmondCompleteResponse to rows.server  
+   
     Functional
     1.Command 1023
     8.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
@@ -506,13 +513,18 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     2.Select on almondhistory
     params: mac,type
 
+    Redis
+    4.hgetall on AL_<AlmondMAC>
+    5.get on ICID_<code>                //where code = random string
+    6.setex on ICID_<code>            //where code = random string
+
     Queue
-    4. Send Response to queue  
-    // where repsonse=command, payload,almondMAC, queue= payload.queue 
+    8.Send RestoreResponse to  config.SERVER_NAME
 
     Functional
     1.Command 2222
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    7.delete store[commandID] 
 
     Flow
     socket(packet)->validator(do)->processor(do)->notificationFetcher(almondHistroy)->newRowBuilder(almondHistroy)->dispatcher(dispatchResponse)->dispatcher(unicast)->newRowBuilder(restoreData)->broadcaster(unicast)
@@ -1076,30 +1088,287 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     6.hmset on AL_<JsonObj.AlmondMAC>      //where value = [SUSER_<UserID>,1]
     7.hmset on UID_<userid>               //where value = [SMAC_<JsonObj.AlmondMAC>,1]
     9.hgetall on AL_<AlmondMAC>
+    11.hgetall on AL_<AlmondMAC>
+    12.get on ICID_<code>                //where code = random string
+    13.setex on ICID_<code>            //where code = random string
 
     multi
-    13.hgetall on UID_<data.SecondaryUsers>     //here, multi is done on every SecondaryUser 
+    17.hgetall on UID_<data.SecondaryUsers>     //here, multi is done on every SecondaryUsers 
 
     Queue
-    11.Send UserInviteRequestResponse to queue
+    15.Send UserInviteRequestResponse to config.SERVER_NAME
     14.Send UserInviteRequestResponse to MobileQueue
     
     Functional
     1.Command 1110
     10.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
-    12.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    14.delete store[commandID]
+    16.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
     socket(packet)->validator(do)->processor(do)->account-manager-json(UserInvite)->sqlManager(checkSecondary),sqlManager(addSecondaryAlmond)->redisManager(addSecondaryAlmond)->sqlManager(getEmail)->redisManager(getAlmond)->rowBuilder(defaultReply)->dispatcher(dispatchResponse)->dispatcher(unicast)->rowBuilder(userChange)->rowBuilder(userChange)->broadcaster(unicast)->dispatcher(broadcast)->broadcastBuilder(almondAdd),broadcastBuilder(userAdd)->broadcaster(broadcast)
 
+<a name="1110c"></a>
+## 44.UpdateUserProfileRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID
 
+    Redis
+
+    multi
+    5.hgetall on UID_<userID>         //here, multi is done on every userID in UserList
     
+    SQl
+    2.Update on Users
+      params: UserID
 
+    Queue
+    6.Send UserProfileResponse to MobileQueue 
+   
+    Functional
+    1.Command 1110
+    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
+    Flow
+    socket(packet)->validator(do)->processor(do)->account-manager-json(UpdateUserProfile)->rowBuilder(UpdateUserProfile)->dispatcher(dispatchResponse)-> dispatcher(broadcast)->broadcastBuilder(userProfileUpdate)->broadcaster(broadcast)
 
+<a name="1110d"></a>
+## 45.DeleteSecondaryUserRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
 
+    SQl
+    2.Delete on AlmondSecondaryUsers
+      params: AlmondMAC, userID
+    3.Delete on NotificationPreferences
+      params:  AlmondMAC, userID
 
+    Redis
+    4.hdel on  AL_<AlmondMAC>             // value = SUSER_<secondaryUser>
+    5.hdel on UID_<secondaryUser>         //value = SMAC_<AlmondMAC>
+    7.hgetall on AL_<AlmondMAC>
+    8.get on ICID_<code>                //where code = random string
+    9.setex on ICID_<code>            //where code = random string    
 
+    multi
+    13.hgetall on UID_<userList>   
+      /* here, multi is done on userList where userList = data.userListAlmondDelete,data.userListUserDelete */
 
+    Queue
+    11.Send DynamicUserChangeResponse to config.SERVER_NAME
+    14.Send DynamicAlmondDeleteResponse,DynamicUserDeleteResponse to MobileQueue
 
+    Functional
+    1.Command 1110
+    6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    10.delete store[commandID]
+    12.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
+    Flow
+    socket(packet)->validator(do)->processor(do)->account-manager-json(DeleteSecondaryUser)->sqlManager(deleteUser)->redisManager(redisExecute),redisManager(deleteAccount)->rowBuilder(defaultReply)->dispatcher(dispatchResponse)->dispatcher(unicast)-> rowBuilder(userChange)->broadcaster(unicast)->dispatcher(broadcast)->broadcastBuilder(almondDelete),broadcastBuilder(userDelete)->broadcaster(broadcast)
+
+<a name="1110e"></a>
+## 46.DeleteMeAsSecondaryUserRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
+
+    SQl    
+    3.Delete on AlmondSecondaryUsers
+      params: AlmondMAC, userID
+    4.Delete on NotificationPreferences
+      params:  AlmondMAC, userID
+
+    Redis
+    2.hgetall on AL_<AlmondMAC>
+    5.hdel on  AL_<AlmondMAC>             // value = SUSER_<secondaryUser>
+    6.hdel on UID_<secondaryUser>         //value = SMAC_<AlmondMAC>
+    8.hgetall on AL_<AlmondMAC>
+    9.get on ICID_<code>                //where code = random string
+    10.setex on ICID_<code>            //where code = random string
+
+    multi
+    14.hgetall on UID_<userList>   
+      /* here, multi is done on userList where userList = data.userListAlmondDelete,data.userListUserDelete */
+
+    Queue
+    12.Send DynamicUserChangeResponse to config.SERVER_NAME
+    15.Send DynamicAlmondDeleteResponse,DynamicUserDeleteResponse to MobileQueue
+    
+    Functional
+    1.Command 1110
+    7.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    11.delete store[commandID] 
+    13.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+
+    Flow
+    socket(packet)->validator(do)->processor(do)->account-manager-json(DeleteMeAsSecondaryUserResponse)->redisManager(getAlmond)->sqlManager(deleteUser)->redisManager(redisExecute),redisManager(deleteAccount)->rowBuilder(defaultReply)->dispatcher(dispatchResponse)->dispatcher(unicast)-> rowBuilder(userChange)->broadcaster(unicast)->dispatcher(broadcast)->broadcastBuilder(almondDelete),broadcastBuilder(userDelete)->broadcaster(broadcast)
+
+<a name="1110f"></a>
+## 47.ChangePasswordRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
+
+    SQL 
+    2.Select on Users
+     params:EmailID
+
+    3.Update on Users
+     params:Password,EmailID
+     
+    4.Delete on UserTempPasswords         //if (rows.affectedRows == 1)
+     params:UserID
+    5.Delete on NotificationID
+     params:UserID
+
+            (or)
+
+     4.return            //if (rows.affectedRows == 0)
+
+    /* note: considered that rows are affected */
+
+    Redis
+    7.hmset on UID_<socket.userid>        //values = Q_<config.SERVER_NAME,userSession.length-1>
+    
+    multi
+    9.hgetall on UID_<userID>          //here multi is done on every userID in userList
+
+    Queue
+    10.Send ChangePasswordRequestResponse to MobileQueue
+
+    Functional
+    1.Command 1110
+    6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    8.delete socketStore[userid]
+
+    Flow
+    socket(packet)->validator(do)->validator(checkCredentials)->processor(do)->account-manager-json(ChangePassword)->connection-pool(queryFunction)->rowBuilder(defaultReply)->dispatcher(dispatchResponse)->mongo-store(removeAllExceptCurrent)->dispatcher(broadcast)->broadcastBuilder(removeAll)->broadcaster(broadcast)
+
+<a name="1110g"></a>
+## 48.DeleteAccountRequest (Command 1110) 
+    Command no 
+    1110- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
+
+    SQL 
+    2.Select on Users
+      params:EmailID
+    3.Delete on Users
+      params: UserID
+    9.Delete on AlmondUsers
+      params: AlmondMAC
+    10.Update on AllAlmondPlus
+      params: AlmondMAC 
+
+    Redis
+    4.hgetall on UID_<packet.userid>
+    5.del on UID_<packet.userid>
+
+    multi
+    6.hgetall on AL_<pMACs>
+
+    multi
+    7.del on AL_<pMACs>
+
+    multi
+    8.hdel on UID_<Entry[1]>           //values = SMAC_<AlmondMAC>, Entry[1] =Secondary UserID 
+
+    13.hmset on UID_<data.userid>   //values = (Q_<config.SERVER_NAME>,0)
+
+    multi
+    14.hgetall on UID_<userID>          //here multi is done on every userID in userList
+
+    Queue
+    15.Send DeleteAccountRequestResponse to MobileQueue
+    16.Send DeleteAccountResponse to config.HTTP_SERVER_NAME
+
+    Functional
+    1.Command 1110
+    11.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    12.delete socketStore[data.userid]
+
+    Flow
+    socket(packet)->validator(do)->validator(checkCredentials)->processor(do)->account-manager-json(DeleteAccount)->sqlManager(deleteUser)->redisManager(redisExecute),redisManager(deleteAccount)->rowBuilder(defaultReply)->dispatcher(dispatchResponse)->mongo-store(removeAll)->dispatcher(broadcast)->broadcastBuilder(removeAll)->broadcaster(broadcast)->dispatcher(broadcastToAllAlmonds)->broadcaster(broadcastModel)
+
+<a name="1011a"></a>
+## 49.PaymentDetails (Command 1011) 
+    Command no 
+    1011- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
+    
+    Redis
+    2.hgetall on UID_<packet.userid>      // values = PMAC_<AlmondMAC>
+
+    Queue
+    4.Send PaymentDetailsResponse to config.HTTP_SERVER_NAME
+
+    Functional
+    1.Command 1011
+    3.delete store[data.UnicastID]
+    5.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
+
+    Flow 
+    socket(packet)->validator(do)->processor(do)->subscriptionCommands(subscriptionCommands)-
+    >redisManager(getAlmonds)->mongo-store(getSocket)->requestQueue(set)->producer(sendToQueue)->dispatcher(dispatchResponse)
+
+<a name="1011b"></a>
+## 50.UpdateCard (Command 1011) 
+    Command no 
+    1011- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
+
+    Redis
+    2.hgetall on UID_<packet.userid>      // values = PMAC_<AlmondMAC>
+
+    Queue
+    4.Send UpdateCardResponse to config.HTTP_SERVER_NAME
+
+    Functional
+    1.Command 1011
+    3.delete store[data.UnicastID]
+    5.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
+
+    Flow 
+    socket(packet)->validator(do)->processor(do)->subscriptionCommands(subscriptionCommands)-
+    >redisManager(getAlmonds)->mongo-store(getSocket)->requestQueue(set)->producer(sendToQueue)->dispatcher(dispatchResponse)
+    
+<a name="1011c"></a>
+## 51.DeleteSubscription (Command 1011) 
+    Command no 
+    1011- JSON format
+ 
+    Required 
+    Command,CommandType,Payload,UserID,AlmondMAC
+
+    Redis
+    2.hgetall on UID_<packet.userid>      // values = PMAC_<AlmondMAC>
+
+    Queue
+    4.Send DeleteSubscriptionResponse to config.HTTP_SERVER_NAME
+
+    Functional
+    1.Command 1011
+    3.delete store[data.UnicastID]
+    5.Send listResponse,commandLengthType ToMobile           //where listResponse = payload
+
+    Flow 
+    socket(packet)->validator(do)->processor(do)->subscriptionCommands(subscriptionCommands)-
+    >redisManager(getAlmonds)->mongo-store(getSocket)->requestQueue(set)->producer(sendToQueue)->dispatcher(dispatchResponse)
