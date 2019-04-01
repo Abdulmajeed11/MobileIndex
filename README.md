@@ -1,12 +1,9 @@
 # MobileIndex (Mobile Server)
 ### Table of contents
-- [DynamicRuleAdded,DynamicRuleUpdated,DynamicRule,Removed,DynamicAllRulesRemoved,AddRule,UpdateRule,
-RemoveRule,RemoveAllRules,ValidateRule,GetDeviceIndex,UpdateDeviceName,UpdateAlmondName,
-DynamicAlmondModeUpdated,DynamicIndexUpdated,DynamicDeviceRemoved,DynamicAllDeviceRemoved,
-DeviceOnlineCheck,DynamicClientAdded,DynamicClientJoined,DynamicClientLeft,DynamicClientUpdate,
-DynamicClientRemoved,DynamicRemoveAllClient,UpdateClient,RemoveClient,RemoveAllClients,WifiClients,
-DynamicSceneAdded,DynamicSceneUpdated,DynamicSceneActivated,DynamicSceneRemoved,
-DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1061)](#1061) 
+- [
+AddRule,UpdateRule,RemoveRule,RemoveAllRules,ValidateRule,GetDeviceIndex,UpdateDeviceName,
+UpdateAlmondName,DeviceOnlineCheck,UpdateClient,RemoveClient,RemoveAllClients,WifiClients,
+AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1061)](#1061) 
 - [DeviceList (Command 1200)](#1200)
 - [SceneList (Command 1300)](#1300)
 - [RuleList (Command 1400)](#1400)
@@ -57,6 +54,18 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
 - [PaymentDetails (Command 1011)](#1011a)
 - [UpdateCard (Command 1011)](#1011b)
 - [DeleteSubscription (Command 1011)](#1011c)
+****************************************************************************************************************************
+## Consumer Commands (Mobile)
+- [Consumer commands:](#ConsumerCommands)
+- [AddRule,UpdateRule,RemoveRule,RemoveAllRules,ValidateRule,GetDeviceIndex,UpdateDeviceName,UpdateAlmondName,DeviceOnlineCheck,UpdateClient,RemoveClient,RemoveAllClients,WifiClients,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1061)](#1064)
+- [DynamicIndexUpdated,DynamicDeviceRemoved,DynamicAllDeviceRemoved (Command 1200)](#1200i)
+- [DynamicSceneAdded,DynamicSceneUpdated,DynamicSceneActivated,DynamicSceneRemoved,
+DynamicAllSceneRemoved (Command 1300)](#1300i)
+- [DynamicRuleAdded,DynamicRuleUpdated,DynamicRuleRemoved,DynamicAllRulesRemoved (Command 1400)](#1400i)
+- [DynamicClientAdded,DynamicClientJoined,DynamicClientLeft,DynamicClientUpdate,DynamicClientRemoved,DynamicRemoveAllClient (Command 1500)](#1500i)
+- [DynamicAlmondModeUpdated (Command 153)](#153)
+
+****************************************************************************************************************************
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -317,7 +326,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     7.Send response to config.SERVER_NAME        // (payload,command,almondMAC) to queue
 
     Functional 
-    1.Command 1061
+    1.Command 1100
     2.Send listResponse,commandLengthType ToMobile         //where listResponse = payload
     6.delete store[commandID]
 
@@ -1264,7 +1273,7 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Required 
     Command,CommandType,Payload,UserID,AlmondMAC
 
-    SQL 
+    SQl 
     2.Select on Users
       params:EmailID
     3.Delete on Users
@@ -1372,3 +1381,86 @@ DynamicAllSceneRemoved,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScen
     Flow 
     socket(packet)->validator(do)->processor(do)->subscriptionCommands(subscriptionCommands)-
     >redisManager(getAlmonds)->mongo-store(getSocket)->requestQueue(set)->producer(sendToQueue)->dispatcher(dispatchResponse)
+
+--------------------------------------------------------------------------------------------------
+
+<a name="ConsumerCommands"></a>
+## ConsumerCommands:
+<a name="1064"></a>
+## 1.Command 1064
+    Command no 
+    1064- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1064
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="1200i"></a>
+## 2.Command 1200
+    Command no 
+    1200- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1200
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="1300i"></a>
+## 3.Command 1300
+    Command no 
+    1300- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1300
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="1400i"></a>
+## 4.Command 1400
+    Command no 
+    1400- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1400
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="1500i"></a>
+## 5.Command 1500
+    Command no 
+    1500- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1500
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="153"></a>
+## 6.Command 153
+    Command no 
+    153- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 153
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
