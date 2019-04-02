@@ -54,18 +54,26 @@ AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1061)](#1061
 - [PaymentDetails (Command 1011)](#1011a)
 - [UpdateCard (Command 1011)](#1011b)
 - [DeleteSubscription (Command 1011)](#1011c)
-****************************************************************************************************************************
+--------------------------------------------------------------------------------------------------
+
 ## Consumer Commands (Mobile)
 - [Consumer commands:](#ConsumerCommands)
-- [AddRule,UpdateRule,RemoveRule,RemoveAllRules,ValidateRule,GetDeviceIndex,UpdateDeviceName,UpdateAlmondName,DeviceOnlineCheck,UpdateClient,RemoveClient,RemoveAllClients,WifiClients,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1061)](#1064)
+- [AddRule,UpdateRule,RemoveRule,RemoveAllRules,ValidateRule,GetDeviceIndex,UpdateDeviceName,UpdateAlmondName,DeviceOnlineCheck,UpdateClient,RemoveClient,RemoveAllClients,WifiClients,AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1064)](#1064)
 - [DynamicIndexUpdated,DynamicDeviceRemoved,DynamicAllDeviceRemoved (Command 1200)](#1200i)
 - [DynamicSceneAdded,DynamicSceneUpdated,DynamicSceneActivated,DynamicSceneRemoved,
 DynamicAllSceneRemoved (Command 1300)](#1300i)
 - [DynamicRuleAdded,DynamicRuleUpdated,DynamicRuleRemoved,DynamicAllRulesRemoved (Command 1400)](#1400i)
 - [DynamicClientAdded,DynamicClientJoined,DynamicClientLeft,DynamicClientUpdate,DynamicClientRemoved,DynamicRemoveAllClient (Command 1500)](#1500i)
 - [DynamicAlmondModeUpdated (Command 153)](#153)
+- [RouterSummary,GetWirelessSettings,SetWirelessSettings,RebootRouter,SendLogs,FirmwareUpdate(Command 1100)](#1100)
+- [DynamicAlmondProperties (Command 1050)](#1050)
+- [Command 1020](#1020)
+- [Command 64](#64)
+- [DynamicAlmondNameChange (Command 49)](#49)
+- [AffiliationAlmondComplete (Command 25)](#25)
+- [CloudReset (Command 8)](#8)
 
-****************************************************************************************************************************
+--------------------------------------------------------------------------------------------------
 
 <a name="1061"></a>
 ## 1)Command 1061
@@ -1464,3 +1472,93 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     2.delete store[unicastID]
     3.Send Res,commandLengthType to Mobile
 
+<a name="1100"></a>
+## 7.Command 1100
+    Command no 
+    1100- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1100
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="1050"></a>
+## 8.Command 1050
+    Command no 
+    1050- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1050
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="1020"></a>
+## 9.Command 1020
+    Command no 
+    1020- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 1020
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="64"></a>
+## 10.Command 64
+    Command no 
+    64- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 64
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="49"></a>
+## 11.Command 49
+    Command no 
+    49- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 49
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="25"></a>
+## 12.Command 25
+    Command no 
+    25- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 25
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
+
+<a name="8"></a>
+## 13.Command 8
+    Command no 
+    8- JSON format
+ 
+    Required 
+    Command,CommandType,Payload
+
+    Functional
+    1.Command 8
+    2.delete store[unicastID]
+    3.Send Res,commandLengthType to Mobile
