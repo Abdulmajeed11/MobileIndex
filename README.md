@@ -918,7 +918,7 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     socket(packet)->validator(do)->processor(do)->notificationFetcher(makeBadgeZero)->oldRowBuilder(clear_the_badge)->dispacher(dispatchResponse)
 
 <a name="300"></a>
-## 37.NotificationPreferences(Command 300)
+## 37.NotificationPreferences (Command 300)
     Command no 
     300- JSON format
  
@@ -928,10 +928,10 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     Redis
 
     multi
-    5.hgetall on UID_<userID>     //here, multi is done on every userID in UserList
+    4.hgetall on UID_<userID>     //here, multi is done on every userID in UserList
 
     Queue
-    6.Send UserProfileResponse to MobileQueue            
+    5.Send UserProfileResponse to MobileQueue            
 
     SQl
     2.Insert on NotificationPreferences
@@ -940,7 +940,6 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     Functional
     1.Command 300
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
-    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
     socket(packet)->validator(do)->processor(do)->notificationPreferences(update_notification_preferences)->oldRowBuilder(notificationPreferences)->dispacher(dispatchResponse)->dispatcher(broadcast)->broadcastBuilder(defaultXML)->broadcaster(broadcast)
@@ -976,10 +975,10 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     3.hgetall on AL_<payload.AlmondMAC>
 
     multi
-    6.hgetall on UID_<userID>          //here, multi is done on every userID in UserList
+    5.hgetall on UID_<userID>          //here, multi is done on every userID in UserList
 
     Queue
-    7.Send UserProfileResponse to MobileQueue            
+    6.Send UserProfileResponse to MobileQueue            
 
     SQl
     2.update on AlmondplusDB.WifiClients
@@ -988,7 +987,6 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     Functional
     1.Command 1060
     4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
-    5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
     socket(packet)->validator(do)->processor(do)->clientModel(update)->newRowBuilder(change_user)->dispatcher(broadcast)->broadcastBuilder(change_user)->broadcaster(broadcast)
@@ -1005,27 +1003,24 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     4.hgetall on AL_<payload.AlmondMAC>
 
     multi
-    7.hgetall on UID_<userID>         //here, multi is done on every userID in UserList
+    6.hgetall on UID_<userID>         //here, multi is done on every userID in UserList
 
     Queue
-    8.Send UserProfileResponse to MobileQueue           
+    7.Send UserProfileResponse to MobileQueue           
 
     SQl
     2.Update on AlmondplusDB.WifiClients 
       params: UserName,AlmondMAC, UserName
-
     3.Update on AlmondplusDB.WifiClients 
       params: UserName,AlmondMAC,ClientID
 
     Functional
     1.Command 1060
     5.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
-    6.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
     socket(packet)->validator(do)->processor(do)->clientModel(update)->newRowBuilder(change_user)->dispatcher(broadcast)->broadcastBuilder(change_user)->broadcaster(broadcast)
     
-
 <a name="1004"></a>
 ## 41.SUPER_LOGIN (Command 1004) 
     Command no 
@@ -1113,8 +1108,8 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     17.hgetall on UID_<data.SecondaryUsers>     //here, multi is done on every SecondaryUsers 
 
     Queue
-    15.Send UserInviteRequestResponse to config.SERVER_NAME
-    14.Send UserInviteRequestResponse to MobileQueue
+    14.Send UserInviteRequestResponse to config.SERVER_NAME
+    15.Send UserInviteRequestResponse to MobileQueue
     
     Functional
     1.Command 1110
@@ -1136,19 +1131,18 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     Redis
 
     multi
-    5.hgetall on UID_<userID>         //here, multi is done on every userID in UserList
+    4.hgetall on UID_<userID>         //here, multi is done on every userID in UserList
     
     SQl
     2.Update on Users
       params: UserID
 
     Queue
-    6.Send UserProfileResponse to MobileQueue 
+    5.Send UserProfileResponse to MobileQueue 
    
     Functional
     1.Command 1110
     3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
-    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
 
     Flow
     socket(packet)->validator(do)->processor(do)->account-manager-json(UpdateUserProfile)->rowBuilder(UpdateUserProfile)->dispatcher(dispatchResponse)-> dispatcher(broadcast)->broadcastBuilder(userProfileUpdate)->broadcaster(broadcast)
