@@ -72,6 +72,7 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
 - [DynamicAlmondNameChange (Command 49)](#49)
 - [AffiliationAlmondComplete (Command 25)](#25)
 - [CloudReset (Command 8)](#8)
+- [Command 1600](#1600)
 
 --------------------------------------------------------------------------------------------------
 
@@ -1532,4 +1533,16 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
 
     FUNCTIONAL -
     1.Command 8
+    2.Send Res,commandLengthType to Mobile
+
+<a name="1600"></a>
+## 14.Command 1600
+    Command no 
+    1600- JSON format
+ 
+    REQUIRED - 
+    Command,CommandType,Payload
+
+    FUNCTIONAL -
+    1.Command 1600
     2.Send Res,commandLengthType to Mobile
