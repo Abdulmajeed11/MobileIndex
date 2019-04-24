@@ -1053,18 +1053,19 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     Command,CommandType,Payload,AlmondMAC
      
     REDIS -
-    4.hgetall on AL_<data.AlmondMAC>
+    3.hgetall on AL_<data.AlmondMAC>
+    5.hgetall on AL_<data.AlmondMAC>
 
     SQL -
     2.Select on Users
       params:EmailID
 
     QUEUE -
-    5.Send UnlinkAlmondRequestResponse to AlmondServer
+    6.Send UnlinkAlmondRequestResponse to AlmondServer
 
     FUNCTIONAL -
     1.Command 1110
-    3.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
+    4.Send listResponse,commandLengthType ToMobile       //where listResponse = payload
  
     FLOW -
     socket(packet)->validator(do)->validator(unlink),validator(checkCredentials)->sqlManager(getUser)->processor(do)->account-manager-json(UnlinkAlmond)->rowBuilder(defaultReply)->dispatcher(unicast)->dispatcher(dispatchResponse)->account-manager-json(getAlmond)->broadcastBuilder(unlink)->broadcaster(unicast)
