@@ -717,7 +717,7 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
 
     SQL -
     2.Delete on UserTempPasswords
-     params: UserID,TemmpPassword
+     params: UserID,TempPassword
 
     FUNCTIONAL -
     1.Command 3
