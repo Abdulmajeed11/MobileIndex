@@ -45,7 +45,7 @@ AddScene,SetScene,ActivateScene,DeleteScene,DeleteAllScene (Command 1061)](#1061
 - [ChangeUser (Command 1060,Action:Update)](#1060b)
 - [Super login (Command 1004)](#1004)
 - [UnlinkAlmondRequest (Command 1110)](#1110a) 
-- [UserInviteRequest (Command 1110](#1110b)
+- [UserInviteRequest (Command 1110)](#1110b)
 - [UpdateUserProfileRequest (Command 1110)](#1110c)
 - [DeleteSecondaryUserRequest (Command 1110)](#1110d)
 - [DeleteMeAsSecondaryUserRequest (Command 1110)](#1110e)
@@ -1100,8 +1100,8 @@ DynamicAllSceneRemoved (Command 1300)](#1300i)
     17.hgetall on UID_<data.SecondaryUsers>     //here, multi is done on every SecondaryUsers 
 
     QUEUE -
-    14.Send UserInviteRequestResponse to config.SERVER_NAME
-    15.Send UserInviteRequestResponse to MobileQueue
+    15.Send UserInviteRequestResponse to config.SERVER_NAME
+    18.Send UserInviteRequestResponse to MobileQueue
     
     FUNCTIONAL -
     1.Command 1110
